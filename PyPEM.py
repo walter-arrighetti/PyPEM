@@ -129,5 +129,3 @@ def PEM_write_file(filename, objs):
 	with open(filename,'wb') as f:	return f.write(payload)
 
 
-filename = "C:\\Users\\walter.arrighetti\\Desktop\\temp\\certs\\IntesiGroupEUQualifiedElectronicSealCAG2.pem"
-print PEM_parse_file(filename)
