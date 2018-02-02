@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ##################################################
-##  PyPEM.py                                   ##
+##  PyPEM.py                                    ##
 ##______________________________________________##
 ##  Python module to parse, generate, validate  ##
 ##  and perform other ops on PEM-encoded files  ##
