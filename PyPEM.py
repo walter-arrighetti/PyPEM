@@ -8,21 +8,34 @@
 ##  Copyright (C) 2011-2013 Walter Arrighetti   ##
 ##  coding by: Walter Arrighetti, PhD, CISSP    ##
 ##################################################
-_version = "0.65"
+_version = "0.7"
 import hashlib
 import base64
 import re
 
-
+try:
+	#import pyasn1
+	import asn1
+	_hasASN1 = True
+except:	_hasASN1 = False
 
 class _ASN1_Base(object):
 	""" Base class for parsed ASN.1 objects. """
 	def __init__(self, payload):
+		global _hasASN1
 		if isinstance(payload, unicode):	payload = payload.encode('ascii')
 		self._payload = payload
+		if _hasASN1:
+			#received, substrate = pyasn1.codec.native.decoder.decode(self._payload,asn1Spec=pyasn1.codec.native.decoder.Record())
+			self._enc, self._dec = asn1.Encoder(), asn1.Decoder()
+			self._dec.start(self._payload)
+			#tag, value = self._dec.read()
+			#self._payload = self._enc.output()
+			#self._enc.write(payload,asn1.ObjectIdentifier)
+		pass
 	def __repr__(self):
 		return '<{0}(ASN.1 object with SHA-1 digest {1!r})>'.format( self.__class__.__name__, hashlib.sha1(self._payload).hexdigest() )
-	def __str__(self):	return self._payload
+	def __str__(self):	return repr(self)
 	def __eq__(self, other):
 		if not isinstance(other, self.__class__):	return NotImplemented
 		return (type(self)==type(other) and self._payload==other._payload)
@@ -30,6 +43,14 @@ class _ASN1_Base(object):
 		if not isinstance(other, self.__class__):	return NotImplemented
 		return (type(self)!=type(other) or self._payload!=other._payload)
 	def __hash__(self):	return hash(self._payload)
+	def raw(self):	return self._payload
+	def readall(self, data=None):
+		if not data:	data = self._payload
+		tags = []
+		while True:
+			this_tag = self._dec.read()
+			if this_tag:	tags.append(this_tag)
+			else:	return tags
 class ContentInfo(_ASN1_Base):
 	""" PKCS#7 or Cryptographic Message Syntac (CMS) object."""
 	pass
@@ -93,18 +114,20 @@ def PEM_parse(data):
 		if not sepr[n][1]:	del sepr[n]
 	if not sepr:	return []
 	for n in xrange(len(sepr)):
-		if sepr[n][0] in __PEM_Types.keys():	sepr[n] = __PEM_Types[sepr[n][0]][0]( base64.b64decode(sepr[n][1]) )
-		else:	sepr[n] = ( sepr[n][0], base64.b64decode(sepr[n][1]) )
+		if sepr[n][0] in __PEM_Types.keys():
+			sepr[n] = __PEM_Types[sepr[n][0]][0] ( base64.b64decode(sepr[n][1]) )
+		else:	print "XXXXXX";	sepr[n] = ( sepr[n][0], base64.b64decode(sepr[n][1]) )
 	return sepr
 def PEM_parse_file(filename):
 	""" Reads 'filename' and parses PEM objects from it. """
 	with open(filename,'rb') as f:	return PEM_parse(f.read())
 def PEM_write(objs):
-	def chunkstring(data,len):
-		return (data[0+i:len+i] for i in xrange(0,len(data),len))
+	def chunkstring(data,length):
+		return [data[0+i:length+i] for i in xrange(0,len(data),length)]
 	def _checklabel(match):
 		if len(match) and (match.find('  ')>0 or match[0]==' ' or match[-1]==' '):	return False
 		return True
+	if type(objs) not in [type([]),type(tuple([]))]:	objs = [objs]
 	payl = []
 	for n in xrange(len(objs)):
 		label = False
@@ -112,13 +135,13 @@ def PEM_write(objs):
 			label, asn1 = _checklabel(objs[n][0]), objs[n][1]
 		else:
 			for typ in __PEM_Types.keys():
-				if objs[n].isinstance(__PEM_Types[typ][0]):
-					label, asn1 = typ, str(objs[n])
+				if type(objs[n]) == __PEM_Types[typ][0]:
+					label, asn1 = typ, objs[n].raw()
 					break
 		if label==False:	continue
-		elif label=="":	pass
+		elif label=="":	continue
 		elif not re.match(r"[A-Z0-9 ]*",label):	continue
-		else:	continue
+		#else:	pass
 		payl.append("-----BEGIN %s-----"%label)
 		payl.extend(list(chunkstring( base64.b64encode(str(asn1)) ,64)))
 		payl.append("-----END %s-----"%label)
@@ -128,4 +151,6 @@ def PEM_write_file(filename, objs):
 	if not payload:	return False
 	with open(filename,'wb') as f:	return f.write(payload)
 
-
+###EXAMPLE THAT READS AND REWRITES A (CHAIN OF) ASN.1 TYPE(S)
+#	cert = PEM_parse_file(filename)[0]
+#	PEM_write_file("out.pem",cert)
