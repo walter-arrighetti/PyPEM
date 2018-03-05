@@ -116,7 +116,7 @@ def PEM_parse(data):
 	for n in xrange(len(sepr)):
 		if sepr[n][0] in __PEM_Types.keys():
 			sepr[n] = __PEM_Types[sepr[n][0]][0] ( base64.b64decode(sepr[n][1]) )
-		else:	print "XXXXXX";	sepr[n] = ( sepr[n][0], base64.b64decode(sepr[n][1]) )
+		else:	sepr[n] = ( sepr[n][0], base64.b64decode(sepr[n][1]) )
 	return sepr
 def PEM_parse_file(filename):
 	""" Reads 'filename' and parses PEM objects from it. """
@@ -152,5 +152,5 @@ def PEM_write_file(filename, objs):
 	with open(filename,'wb') as f:	return f.write(payload)
 
 ###EXAMPLE THAT READS AND REWRITES A (CHAIN OF) ASN.1 TYPE(S)
-#	cert = PEM_parse_file(filename)[0]
+#	cert = PEM_parse_file(filename)
 #	PEM_write_file("out.pem",cert)
