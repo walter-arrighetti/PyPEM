@@ -109,7 +109,7 @@ def PEM_parse(data):
 	def _checklabel(match):
 		if len(match) and (match.find('  ')>0 or match[0]==' ' or match[-1]==' '):	return False
 		return True
-	sepr = [ [obj.group('label0'),obj.group('payload').translate(None," \t\n\r\f\v")] for obj in __PEMre.finditer(data) if (_checklabel(obj.group('label0'))!=False and _checklabel(obj.group('label1'))!=False) ]
+	sepr = [ [obj.group('label0').strip(),obj.group('payload').translate(None," \t\n\r\f\v")] for obj in __PEMre.finditer(data) if (_checklabel(obj.group('label0'))!=False and _checklabel(obj.group('label1'))!=False) ]
 	for n in xrange(len(sepr)-1,-1,-1):
 		if not sepr[n][1]:	del sepr[n]
 	if not sepr:	return []
