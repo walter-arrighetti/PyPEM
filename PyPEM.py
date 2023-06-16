@@ -245,6 +245,6 @@ def PEM_write_file(filename, objs, newline='\n'):
 ###EXAMPLE THAT READS AND REWRITES A (CHAIN OF) ASN.1 TYPE(S)
 import sys
 chain = []
-for arg in sys.argv[1:]:
+for arg in sys.argv:
 	chain.extend(PEM_parse_file(arg))
 PEM_write_file("out.chain.pem",chain)
